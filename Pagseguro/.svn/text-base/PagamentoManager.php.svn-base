@@ -1,0 +1,82 @@
+<?php
+/**
+ * Created by JetBrains PhpStorm.
+ * User: duo
+ * Date: 2/25/12
+ * Time: 2:25 PM
+ * To change this template use File | Settings | File Templates.
+ */
+namespace BFOS\PagseguroBundle\Pagseguro;
+
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use \BFOS\PagseguroBundle\Entity\Pagamento;
+
+
+class PagamentoManager
+{
+    private $container;
+    private $repository;
+    private $logger;
+
+    function __construct(ContainerInterface $container)
+    {
+        $this->container = $container;
+        $this->repository = $container->get('doctrine')->getRepository('BFOSPagseguroBundle:Pagamento');
+        $this->logger = $container->get('logger');
+    }
+
+    /**
+     * Registra o pagamento junto ao Pagseguro
+     *
+     * @param \BFOS\PagseguroBundle\Entity\Pagamento $pagamento
+     *
+     * @return boolean False se o pagamento nao eh valido para ser submetido ao Pagseguro.
+     */
+    public function registrarPagamento(Pagamento $pagamento){
+
+        if(!$this->ehValidoPagamento($pagamento)){
+            return false;
+        }
+        $xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $xml .= sprintf('<%s>%s</%s>','checkout',$pagamento->toXML(),'checkout');
+
+        $url = 'https://ws.pagseguro.uol.com.br/v2/checkout?' . sprintf('email=%s&token=$s', $pagamento->getEmail(), $pagamento->getToken());
+
+        $this->logger->debug(__METHOD__ . ' | url = ' . $url);
+        $this->logger->debug(__METHOD__ . ' | xml = ' . $xml);
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_MUTE, 1);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/xml; charset=ISO-8859-1'));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, "$xml");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $retornoPagseguro = curl_exec($ch);
+        curl_close($ch);
+
+        @$retornoXml = simplexml_load_string($retornoPagseguro);
+        if($retornoXml->errors){ // pagseguro retornou xml com errors
+            $pagamento->setRegistroErrors($retornoXml->errors->asXML());
+        } else { // deu certo o registro do pagamento
+            $pagamento->setRegistroCode($retornoXml->checkout->code);
+            $pagamento->setRegistroDate($retornoXml->checkout->date);
+        }
+
+        // tenta persistir as informacoes no BD, para garantir a persistencia do que estah sendo enviado
+        $this->repository->persist($pagamento);
+        $this->repository->flush();
+
+        return $pagamento;
+    }
+
+    /**
+     * Verifica se o pagamento eh valido, ou seja, se jah pode ser submetido ao Pagseguro.
+     *
+     * @param \BFOS\PagseguroBundle\Entity\Pagamento $pagamento
+     */
+    protected function ehValidoPagamento(Pagamento $pagamento){
+        //TODO: implementar ehValidoPagamento
+    }
+}

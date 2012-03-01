@@ -1,0 +1,999 @@
+<?php
+
+namespace BFOS\PagseguroBundle\Entity;
+
+use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
+use Symfony\Component\Validator\Constraints as Assert;
+
+/**
+ * BFOS\PagseguroBundle\Entity\Pagamento
+ *
+ * @ORM\Table()
+ * @ORM\Entity(repositoryClass="BFOS\PagseguroBundle\Entity\PagamentoRepository")
+ */
+class Pagamento
+{
+    /**
+     * @var integer $id
+     *
+     * @ORM\Column(name="id", type="integer")
+     * @ORM\Id
+     * @ORM\GeneratedValue(strategy="AUTO")
+     */
+    private $id;
+
+    /**
+     * Codificação de caracteres.
+     *
+     * Especifica a codificação de caracteres usada nos parâmetros enviados.
+     *
+     * Presença: Opcional.
+     * Tipo: Texto.
+     * Formato: Os valores aceitos são ISO-8859-1 e UTF-8.
+     *
+     * @var string $charset
+     *
+     * @ORM\Column(name="charset", type="string", length=10, nullable=true)
+     *
+     * @Assert\Choice({ "ISO-8859-1", "UTF-8" })
+     */
+    private $charset;
+
+    /**
+     * Define um código para fazer referência ao pagamento. Este código fica associado à transação criada pelo pagamento e
+     * é útil para vincular as transações do PagSeguro às vendas registradas no seu sistema.
+     *
+     * Presença: Opcional.
+     * Tipo: Texto.
+     * Formato: Livre, com o limite de 200 caracteres.
+     *
+     * @var string $reference
+     *
+     * @ORM\Column(name="reference", type="string", length=200, nullable=true)
+     *
+     * @Assert\MaxLength(200)
+     */
+    private $reference;
+
+    /**
+     * Especifica o e-mail associado à conta PagSeguro que está realizando a chamada à API.
+     *
+     * Presença: Obrigatória.
+     * Tipo: Texto.
+     * Formato: um e-mail válido (p.e., usuario@site.com.br), com no máximo 60 caracteres.
+     *
+     * @var string $email
+     *
+     * @ORM\Column(name="email", type="string", length=60)
+     *
+     * @Assert\NotBlank()
+     * @Assert\Email()
+     * @Assert\MaxLength(60)
+     */
+    private $email;
+
+    /**
+     * Informa o token correspondente à conta PagSeguro que está realizando a chamada a API. Para criar um token para sua conta PagSeguro, acesse a página de configurações de pagamentos.
+     *
+     * Presença: Obrigatória.
+     * Tipo: Texto.
+     * Formato: uma sequência de 32 caracteres.
+     *
+     * @var string $token
+     *
+     * @ORM\Column(name="token", type="string", length=32)
+     *
+     * @Assert\NotBlank()
+     * @Assert\MaxLength(32)
+     * @Assert\MinLength(limit=32)
+     */
+    private $token;
+
+    /**
+     * Indica a moeda na qual o pagamento será feito. No momento, a única opção disponível é BRL (Real).
+     *
+     * Presença: Obrigatória.
+     * Tipo: Texto.
+     * Formato: somente o valor BRL é aceito.
+     *
+     * @var string $currency
+     *
+     * @ORM\Column(name="currency", type="string", length=3)
+     *
+     * @Assert\NotBlank()
+     * @Assert\Choice({ "BRL" })
+     */
+    private $currency;
+
+    /**
+     * Especifica o e-mail do comprador que está realizando o pagamento. Este campo é opcional e você pode enviá-lo caso já tenha
+     * capturado os dados do comprador em seu sistema e queira evitar que ele preencha esses dados novamente no PagSeguro.
+     *
+     * Presença: Opcional.
+     * Tipo: Texto.
+     * Formato: um e-mail válido (p.e., usuario@site.com.br), com no máximo 60 caracteres.
+     *
+     * @var string $senderEmail
+     *
+     * @ORM\Column(name="senderEmail", type="string", length=60, nullable=true)
+     *
+     * @Assert\Email()
+     * @Assert\MaxLength(60)
+     */
+    private $senderEmail;
+
+    /**
+     * Especifica o nome completo do comprador que está realizando o pagamento. Este campo é opcional e você pode enviá-lo caso
+     * já tenha capturado os dados do comprador em seu sistema e queira evitar que ele preencha esses dados novamente no PagSeguro.
+     *
+     * Presença: Opcional.
+     * Tipo: Texto.
+     * Formato: No mínimo duas sequências de caracteres, com o limite total de 50 caracteres
+     *
+     * @var string $senderName
+     *
+     * @ORM\Column(name="senderName", type="string", length=50, nullable=true)
+     *
+     * @Assert\MaxLength(50)
+     */
+    private $senderName;
+
+    /**
+     * Especifica o código de área (DDD) do comprador que está realizando o pagamento. Este campo é opcional e você pode enviá-lo
+     * caso já tenha capturado os dados do comprador em seu sistema e queira evitar que ele preencha esses dados novamente no PagSeguro.
+     *
+     * Presença: Opcional.
+     * Tipo: Número.
+     * Formato: Um número de 2 dígitos correspondente a um DDD válido.
+     *
+     * @var string $senderAreaCode
+     *
+     * @ORM\Column(name="senderAreaCode", type="integer", nullable=true)
+     *
+     * @Assert\Max(limit=99)
+     *
+     */
+    private $senderAreaCode;
+
+    /**
+     * Especifica o número do telefone do comprador que está realizando o pagamento. Este campo é opcional e você pode enviá-lo caso
+     * já tenha capturado os dados do comprador em seu sistema e queira evitar que ele preencha esses dados novamente no PagSeguro.
+     *
+     * Presença: Opcional.
+     * Tipo: Número.
+     * Formato: Um número de 8 dígitos.
+     *
+     * @var string $senderPhone
+     *
+     * @ORM\Column(name="senderPhone", type="string", length=8, nullable=true)
+     *
+     * @Assert\Max(limit=99999999)
+     */
+    private $senderPhone;
+
+    /**
+     * Informa o tipo de frete a ser usado para o envio do produto. Esta informação é usada pelo PagSeguro para calcular, junto aos Correios,
+     * o valor do frete a partir do peso dos itens. A tabela abaixo descreve os valores aceitos e seus significados:
+     *
+     * Código	Significado
+     *      1	Encomenda normal (PAC).
+     *      2	SEDEX
+     *      3	Tipo de frete não especificado.
+     *
+     * Presença: Opcional.
+     * Tipo: Número.
+     * Formato: Um número inteiro de acordo com a tabela acima.
+     *
+     * @var string $shippingType
+     *
+     * @ORM\Column(name="shippingType", type="string", length=255, nullable=true)
+     *
+     * @Assert\Choice({ "1", "2", "3" })
+     */
+    private $shippingType;
+
+    /**
+     * Informa o país do endereço de envio do produto. Este campo é opcional e você pode enviá-lo caso já tenha capturado os dados do
+     * comprador em seu sistema e queira evitar que ele preencha esses dados novamente no PagSeguro.
+     *
+     * Presença: Opcional.
+     * Tipo: Texto.
+     * Formato: No momento, apenas o valor BRA é permitido.
+     *
+     * @var string $shippingAddressCountry
+     *
+     * @ORM\Column(name="shippingAddressCountry", type="string", length=3, nullable=true)
+     *
+     * @Assert\Choice({ "BRA" })
+     */
+    private $shippingAddressCountry;
+
+    /**
+     * Informa o estado do endereço de envio do produto. Este campo é opcional e você pode enviá-lo caso já tenha capturado os dados do
+     * comprador em seu sistema e queira evitar que ele preencha esses dados novamente no PagSeguro.
+     *
+     * Presença: Opcional.
+     * Tipo: Texto.
+     * Formato: Duas letras, representando a sigla do estado brasileiro correspondente.
+     *
+     * @var string $shippingAddressState
+     *
+     * @ORM\Column(name="shippingAddressState", type="string", length=2, nullable=true)
+     *
+     * @Assert\MaxLength(2)
+     * @Assert\MinLength(limit=2)
+     */
+    private $shippingAddressState;
+
+    /**
+     * Informa a cidade do endereço de envio do produto. Este campo é opcional e você pode enviá-lo caso já tenha capturado os dados do
+     * comprador em seu sistema e queira evitar que ele preencha esses dados novamente no PagSeguro.
+     *
+     * Presença: Opcional.
+     * Tipo: Texto.
+     * Formato: Livre. Deve ser um nome válido de cidade do Brasil, de acordo com os dados dos Correios
+     *
+     * @var string $shippingAddressCity
+     *
+     * @ORM\Column(name="shippingAddressCity", type="string", length=80, nullable=true)
+     *
+     * @Assert\MaxLength(80)
+     */
+    private $shippingAddressCity;
+
+    /**
+     * Informa o CEP do endereço de envio do produto. Este campo é opcional e você pode enviá-lo caso já tenha capturado os dados do
+     * comprador em seu sistema e queira evitar que ele preencha esses dados novamente no PagSeguro.
+     *
+     * Presença: Opcional.
+     * Tipo: Número.
+     * Formato: Um número de 8 dígitos.
+     *
+     * @var string $shippingAddressPostalCode
+     *
+     * @ORM\Column(name="shippingAddressPostalCode", type="string", length=8, nullable=true)
+     *
+     * @Assert\Max(limit=99999999)
+     */
+    private $shippingAddressPostalCode;
+
+    /**
+     * Informa o bairro do endereço de envio do produto. Este campo é opcional e você pode enviá-lo caso já tenha capturado os dados do
+     * comprador em seu sistema e queira evitar que ele preencha esses dados novamente no PagSeguro.
+     *
+     * Presença: Opcional.
+     * Tipo: Texto.
+     * Formato: Livre.
+     *
+     * @var string $shippingAddressDistrict
+     *
+     * @ORM\Column(name="shippingAddressDistrict", type="string", length=80, nullable=true)
+     *
+     * @Assert\MaxLength(80)
+     */
+    private $shippingAddressDistrict;
+
+    /**
+     * Informa o nome da rua do endereço de envio do produto. Este campo é opcional e você pode enviá-lo caso já tenha capturado os
+     * dados do comprador em seu sistema e queira evitar que ele preencha esses dados novamente no PagSeguro.
+     *
+     * Presença: Opcional.
+     * Tipo: Texto.
+     * Formato: Livre.
+     *
+     * @var string $shippingAddressStreet
+     *
+     * @ORM\Column(name="shippingAddressStreet", type="string", length=120, nullable=true)
+     *
+     * @Assert\MaxLength(120)
+     */
+    private $shippingAddressStreet;
+
+    /**
+     * Informa o número do endereço de envio do produto. Este campo é opcional e você pode enviá-lo caso já tenha capturado os dados
+     * do comprador em seu sistema e queira evitar que ele preencha esses dados novamente no PagSeguro.
+     *
+     * Presença: Opcional.
+     * Tipo: Texto.
+     * Formato: Livre.
+     *
+     * @var string $shippingAddressNumber
+     *
+     * @ORM\Column(name="shippingAddressNumber", type="string", length=10, nullable=true)
+     *
+     * @Assert\MaxLength(10)
+     */
+    private $shippingAddressNumber;
+
+    /**
+     * Informa o complemento (bloco, apartamento, etc.) do endereço de envio do produto. Este campo é opcional e você pode enviá-lo
+     * caso já tenha capturado os dados do comprador em seu sistema e queira evitar que ele preencha esses dados novamente no PagSeguro.
+     *
+     * Presença: Opcional.
+     * Tipo: Texto.
+     * Formato: Livre.
+     *
+     * @var string $shippingAddressComplement
+     *
+     * @ORM\Column(name="shippingAddressComplement", type="string", length=120, nullable=true)
+     *
+     * @Assert\MaxLength(120)
+     */
+    private $shippingAddressComplement;
+
+    /**
+     * Especifica um valor extra que deve ser adicionado ou subtraído ao valor total do pagamento. Esse valor pode representar uma taxa
+     * extra a ser cobrada no pagamento ou um desconto a ser concedido, caso o valor seja negativo.
+     *
+     * Presença: Opcional.
+     * Tipo: Número.
+     * Formato: Decimal (positivo ou negativo), com duas casas decimais separadas por ponto (p.e., 1234.56 ou -1234.56).
+     *
+     * @var decimal $extraAmount
+     *
+     * @ORM\Column(name="extraAmount", type="decimal", precision=2, nullable=true) //TODO: verificar se tem que validar
+     */
+    private $extraAmount;
+
+    /**
+     * Determina a URL para a qual o comprador será redirecionado após o final do fluxo de pagamento. Este parâmetro permite que seja
+     * informado um endereço de específico para cada pagamento realizado. Veja mais em Redirecionando o comprador para um endereço dinâmico.
+     *
+     * Presença: Opcional.
+     * Tipo: Texto.
+     * Formato: Uma URL válida.
+     *
+     * @var string $redirectURL
+     *
+     * @ORM\Column(name="redirectURL", type="string", length=1000, nullable=true)
+     *
+     * @Assert\MaxLength(100)
+     */
+    private $redirectURL;
+
+    /**
+     * Determina o número máximo de vezes que o código de pagamento criado pela chamada à API de Pagamentos poderá ser usado. Este
+     * parâmetro pode ser usado como um controle de segurança.
+     *
+     * Presença: Opcional.
+     * Tipo: Número.
+     * Formato: Um número inteiro maior que zero.
+     *
+     * @var integer $maxUses
+     *
+     * @ORM\Column(name="maxUses", type="integer", nullable=true)
+     *
+     * @Assert\Min(limit="1")
+     */
+    private $maxUses;
+
+    /**
+     * Determina o prazo (em segundos) durante o qual o código de pagamento criado pela chamada à API de Pagamentos poderá ser usado.
+     * Este parâmetro pode ser usado como um controle de segurança.
+     *
+     * Presença: Opcional.
+     * Tipo: Número.
+     * Formato: Um número inteiro maior ou igual a 30.
+     *
+     * @var integer $maxAge
+     *
+     * @ORM\Column(name="maxAge", type="integer", nullable=true)
+     *
+     * @Assert\Min(limit="30")
+     */
+    private $maxAge;
+
+    /**
+     *Código do erro. Identifica a natureza do erro encontrado e permite o tratamento do erro pelo seu sistema.
+     *
+     * Formato: Veja a tabela de erros no site do PagSeguro.
+     *
+     * @var string $registroErrors
+     *
+     * @ORM\Column(name="registroErrors", type="string", nullable=true)
+     */
+    private $registroErrors;
+
+    /**
+     * @var ArrayCollection $itens
+     *
+     * @ORM\OneToMany(targetEntity="PagamentoItem", mappedBy="pagamento", cascade={"all"})
+     */
+    private $itens;
+
+    function __construct()
+    {
+        $this->itens = new ArrayCollection();
+    }
+
+    /**
+     * Get id
+     *
+     * @return integer 
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * Set charset
+     *
+     * @param string $charset
+     */
+    public function setCharset($charset)
+    {
+        $this->charset = $charset;
+    }
+
+    /**
+     * Get charset
+     *
+     * @return string 
+     */
+    public function getCharset()
+    {
+        return $this->charset;
+    }
+
+    /**
+     * Set email
+     *
+     * @param string $reference
+     */
+    public function setReference($reference)
+    {
+        $this->reference = $reference;
+    }
+
+    /**
+     * Get reference
+     *
+     * @return string 
+     */
+    public function getReference()
+    {
+        return $this->reference;
+    }
+
+    /**
+     * Set email
+     *
+     * @param string $email
+     */
+    public function setEmail($email)
+    {
+        $this->email = $email;
+    }
+
+    /**
+     * Get email
+     *
+     * @return string
+     */
+    public function getEmail()
+    {
+        return $this->email;
+    }
+
+    /**
+     * Set token
+     *
+     * @param string $token
+     */
+    public function setToken($token)
+    {
+        $this->token = $token;
+    }
+
+    /**
+     * Get token
+     *
+     * @return string 
+     */
+    public function getToken()
+    {
+        return $this->token;
+    }
+
+    /**
+     * Set currency
+     *
+     * @param string $currency
+     */
+    public function setCurrency($currency)
+    {
+        $this->currency = $currency;
+    }
+
+    /**
+     * Get currency
+     *
+     * @return string 
+     */
+    public function getCurrency()
+    {
+        return $this->currency;
+    }
+
+    /**
+     * Set senderEmail
+     *
+     * @param string $senderEmail
+     */
+    public function setSenderEmail($senderEmail)
+    {
+        $this->senderEmail = $senderEmail;
+    }
+
+    /**
+     * Get senderEmail
+     *
+     * @return string 
+     */
+    public function getSenderEmail()
+    {
+        return $this->senderEmail;
+    }
+
+    /**
+     * Set senderName
+     *
+     * @param string $senderName
+     */
+    public function setSenderName($senderName)
+    {
+        $this->senderName = $senderName;
+    }
+
+    /**
+     * Get senderName
+     *
+     * @return string 
+     */
+    public function getSenderName()
+    {
+        return $this->senderName;
+    }
+
+    /**
+     * Set senderAreaCode
+     *
+     * @param string $senderAreaCode
+     */
+    public function setSenderAreaCode($senderAreaCode)
+    {
+        $this->senderAreaCode = $senderAreaCode;
+    }
+
+    /**
+     * Get senderAreaCode
+     *
+     * @return string 
+     */
+    public function getSenderAreaCode()
+    {
+        return $this->senderAreaCode;
+    }
+
+    /**
+     * Set senderPhone
+     *
+     * @param string $senderPhone
+     */
+    public function setSenderPhone($senderPhone)
+    {
+        $this->senderPhone = $senderPhone;
+    }
+
+    /**
+     * Get senderPhone
+     *
+     * @return string 
+     */
+    public function getSenderPhone()
+    {
+        return $this->senderPhone;
+    }
+
+    /**
+     * Set shippingType
+     *
+     * @param string $shippingType
+     */
+    public function setShippingType($shippingType)
+    {
+        $this->shippingType = $shippingType;
+    }
+
+    /**
+     * Get shippingType
+     *
+     * @return string 
+     */
+    public function getShippingType()
+    {
+        return $this->shippingType;
+    }
+
+    /**
+     * Set shippingAddressCountry
+     *
+     * @param string $shippingAddressCountry
+     */
+    public function setShippingAddressCountry($shippingAddressCountry)
+    {
+        $this->shippingAddressCountry = $shippingAddressCountry;
+    }
+
+    /**
+     * Get shippingAddressCountry
+     *
+     * @return string 
+     */
+    public function getShippingAddressCountry()
+    {
+        return $this->shippingAddressCountry;
+    }
+
+    /**
+     * Set shippingAddressState
+     *
+     * @param string $shippingAddressState
+     */
+    public function setShippingAddressState($shippingAddressState)
+    {
+        $this->shippingAddressState = $shippingAddressState;
+    }
+
+    /**
+     * Get shippingAddressState
+     *
+     * @return string 
+     */
+    public function getShippingAddressState()
+    {
+        return $this->shippingAddressState;
+    }
+
+    /**
+     * Set shippingAddressCity
+     *
+     * @param string $shippingAddressCity
+     */
+    public function setShippingAddressCity($shippingAddressCity)
+    {
+        $this->shippingAddressCity = $shippingAddressCity;
+    }
+
+    /**
+     * Get shippingAddressCity
+     *
+     * @return string 
+     */
+    public function getShippingAddressCity()
+    {
+        return $this->shippingAddressCity;
+    }
+
+    /**
+     * Set shippingAddressPostalCode
+     *
+     * @param string $shippingAddressPostalCode
+     */
+    public function setShippingAddressPostalCode($shippingAddressPostalCode)
+    {
+        $this->shippingAddressPostalCode = $shippingAddressPostalCode;
+    }
+
+    /**
+     * Get shippingAddressPostalCode
+     *
+     * @return string 
+     */
+    public function getShippingAddressPostalCode()
+    {
+        return $this->shippingAddressPostalCode;
+    }
+
+    /**
+     * Set shippingAddressDistrict
+     *
+     * @param string $shippingAddressDistrict
+     */
+    public function setShippingAddressDistrict($shippingAddressDistrict)
+    {
+        $this->shippingAddressDistrict = $shippingAddressDistrict;
+    }
+
+    /**
+     * Get shippingAddressDistrict
+     *
+     * @return string 
+     */
+    public function getShippingAddressDistrict()
+    {
+        return $this->shippingAddressDistrict;
+    }
+
+    /**
+     * Set shippingAddressStreet
+     *
+     * @param string $shippingAddressStreet
+     */
+    public function setShippingAddressStreet($shippingAddressStreet)
+    {
+        $this->shippingAddressStreet = $shippingAddressStreet;
+    }
+
+    /**
+     * Get shippingAddressStreet
+     *
+     * @return string 
+     */
+    public function getShippingAddressStreet()
+    {
+        return $this->shippingAddressStreet;
+    }
+
+    /**
+     * Set shippingAddressNumber
+     *
+     * @param string $shippingAddressNumber
+     */
+    public function setShippingAddressNumber($shippingAddressNumber)
+    {
+        $this->shippingAddressNumber = $shippingAddressNumber;
+    }
+
+    /**
+     * Get shippingAddressNumber
+     *
+     * @return string 
+     */
+    public function getShippingAddressNumber()
+    {
+        return $this->shippingAddressNumber;
+    }
+
+    /**
+     * Set shippingAddressComplement
+     *
+     * @param string $shippingAddressComplement
+     */
+    public function setShippingAddressComplement($shippingAddressComplement)
+    {
+        $this->shippingAddressComplement = $shippingAddressComplement;
+    }
+
+    /**
+     * Get shippingAddressComplement
+     *
+     * @return string 
+     */
+    public function getShippingAddressComplement()
+    {
+        return $this->shippingAddressComplement;
+    }
+
+    /**
+     * Set extraAmount
+     *
+     * @param decimal $extraAmount
+     */
+    public function setExtraAmount($extraAmount)
+    {
+        $this->extraAmount = $extraAmount;
+    }
+
+    /**
+     * Get extraAmount
+     *
+     * @return decimal 
+     */
+    public function getExtraAmount()
+    {
+        return $this->extraAmount;
+    }
+
+    /**
+     * Set redirectURL
+     *
+     * @param string $redirectURL
+     */
+    public function setRedirectURL($redirectURL)
+    {
+        $this->redirectURL = $redirectURL;
+    }
+
+    /**
+     * Get redirectURL
+     *
+     * @return string 
+     */
+    public function getRedirectURL()
+    {
+        return $this->redirectURL;
+    }
+
+    /**
+     * Set maxUses
+     *
+     * @param integer $maxUses
+     */
+    public function setMaxUses($maxUses)
+    {
+        $this->maxUses = $maxUses;
+    }
+
+    /**
+     * Get maxUses
+     *
+     * @return integer 
+     */
+    public function getMaxUses()
+    {
+        return $this->maxUses;
+    }
+
+    /**
+     * Set maxAge
+     *
+     * @param integer $maxAge
+     */
+    public function setMaxAge($maxAge)
+    {
+        $this->maxAge = $maxAge;
+    }
+
+    /**
+     * Get maxAge
+     *
+     * @return integer 
+     */
+    public function getMaxAge()
+    {
+        return $this->maxAge;
+    }
+
+    /**
+     * @param string $registroErrors
+     */
+    public function setRegistroErrors($registroErrors)
+    {
+        $this->registroErrors = $registroErrors;
+    }
+
+    /**
+     * @return string
+     */
+    public function getRegistroErrors()
+    {
+        return $this->registroErrors;
+    }
+
+    /**
+     * @param \BFOS\PagseguroBundle\Entity\ArrayCollection $itens
+     */
+    public function setItens($itens)
+    {
+        $this->itens = new ArrayCollection();
+        foreach($itens as $item){
+            $this->addItem($item);
+        }
+    }
+
+    public function addItem(PagamentoItem $item){
+        $item->setPagamento($this);
+        $this->itens[] = $item;
+    }
+
+    /**
+     * @return \BFOS\PagseguroBundle\Entity\ArrayCollection
+     */
+    public function getItens()
+    {
+        return $this->itens;
+    }
+
+    // retorna um array com as propriedades desta classe
+    public function toArray(){
+        $arr = array();
+        $arr['id'] = $this->getId();
+        $arr['charsert'] = $this->getCharset();
+        $arr['currency'] = $this->getCurrency();
+        $arr['email'] = $this->getEmail();
+        $arr['extraAmount'] = $this->getExtraAmount();
+        $arr['maxAge'] = $this->getMaxAge();
+        $arr['maxUses'] = $this->getMaxUses();
+        $arr['redirectURL'] = $this->getRedirectURL();
+        $arr['reference'] = $this->getReference();
+        $arr['senderAreaCode'] = $this->getSenderAreaCode();
+        $arr['senderEmail'] = $this->getSenderEmail();
+        $arr['senderName'] = $this->getSenderName();
+        $arr['senderPhone'] = $this->getSenderPhone();
+        $arr['shippingAddressCity'] = $this->getShippingAddressCity();
+        $arr['shippingAddressStreet'] = $this->getShippingAddressStreet();
+        $arr['shippingAddressNumber'] = $this->getShippingAddressNumber();
+        $arr['shippingAddressComplement'] = $this->getShippingAddressComplement();
+        $arr['shippingAddressDistrict'] = $this->getShippingAddressDistrict();
+        $arr['shippingAddressPostalCode'] = $this->getShippingAddressPostalCode();
+        $arr['shippingAddressState'] = $this->getShippingAddressState();
+        $arr['shippingAddressCountry'] = $this->getShippingAddressCountry();
+        $arr['shippingType'] = $this->getShippingType();
+        $arr['token'] = $this->getToken();
+
+        $arr_itens = array();
+        foreach($this->getItens() as $item){
+            $arr_itens[] = $item->toArray();
+        }
+        $arr['itens'] = $arr_itens;
+        return $arr;
+    }
+
+    // retorna uma string no formato XML para o envio das informações de pagamento
+    public function toXML($encoding = 'UTF-8'){
+        if(!in_array($encoding, array('UTF-8','ISO-8859-1'))){
+            throw new \Exception('Encoding invalido.');
+        }
+        $xml = '';
+
+        $tag = 'currency';
+        $value = mb_convert_encoding($this->getCurrency(), $encoding, 'UTF-8');
+        $xml .= sprintf('<%s>%s</%s>',$tag,$value,$tag);
+
+        $tag = 'reference';
+        $value = $this->getReference();
+        $xml .= sprintf('<%s>%s</%s>',$tag,$value,$tag);
+
+        $tag = 'sender';
+        $value = '';
+        $value .= sprintf('<%s>%s</%s>','name',$this->getSenderName(),'name');
+        $value .= sprintf('<%s>%s</%s>','email',$this->getSenderEmail(),'email');
+
+        $value2 = '';
+        $value2 .= sprintf('<%s>%s</%s>','areaCode',$this->getSenderAreaCode(),'areaCode');
+        $value2 .= sprintf('<%s>%s</%s>','number',$this->getSenderPhone(),'number');
+        $value .= sprintf('<%s>%s</%s>','phone',$value2,'phone');
+
+        $xml .= sprintf('<%s>%s</%s>',$tag,$value,$tag);
+
+        $xml_itens = '';
+        foreach($this->getItens() as $item){
+            $xml .= sprintf('<%s>%s</%s>','item',$item->toXML(),'item');
+        }
+        $xml .= sprintf('<%s>%s</%s>','items',$xml_itens,'items');
+
+        $tag = 'shipping';
+        $value = '';
+        $value .= sprintf('<%s>%s</%s>','type', $this->getShippingType(),'type');
+
+        $value2 = sprintf('<%s>%s</%s>','street', $this->getShippingAddressStreet(),'street');
+        $value2 .= sprintf('<%s>%s</%s>','number', $this->getShippingAddressNumber(),'number');
+        $value2 .= sprintf('<%s>%s</%s>','complement', $this->getShippingAddressComplement(),'complement');
+        $value2 .= sprintf('<%s>%s</%s>','district', $this->getShippingAddressDistrict(),'district');
+        $value2 .= sprintf('<%s>%s</%s>','postalCode', $this->getShippingAddressPostalCode(),'postalCode');
+        $value2 .= sprintf('<%s>%s</%s>','city', $this->getShippingAddressCity(),'city');
+        $value2 .= sprintf('<%s>%s</%s>','state', $this->getShippingAddressState(),'state');
+        $value2 .= sprintf('<%s>%s</%s>','country', $this->getShippingAddressCountry(),'country');
+
+        $value .= sprintf('<%s>%s</%s>','address', $value2,'address');
+
+        $xml .= sprintf('<%s>%s</%s>', $tag, $value, $tag);
+
+        return $xml;
+    }
+
+    // retorna a URL de redirecionamento para o site do PagSeguro
+    public function getUrlPagseguro(){
+        if($this->getRegistroErrors()){
+            return null;
+        } else {
+            return 'https://pagseguro.uol.com.br/v2/checkout/payment.html?code=' . $this->getToken();
+        }
+    }
+
+
+
+}
