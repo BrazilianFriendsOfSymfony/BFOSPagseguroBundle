@@ -9,6 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
  *
  * @ORM\Table(name="bfos_pagseguro_transacao")
  * @ORM\Entity(repositoryClass="BFOS\PagseguroBundle\Entity\TransacaoRepository")
+ * @ORM\HasLifecycleCallbacks
  */
 class Transacao
 {
@@ -22,7 +23,7 @@ class Transacao
     private $id;
 
     /**
-     * @var datetime $data_transacao
+     * @var \DateTime $data_transacao
      *
      * @ORM\Column(name="data_transacao", type="datetime", nullable=true)
      */
@@ -238,6 +239,60 @@ class Transacao
      */
     private $itens;
 
+    /**
+     * @var \Doctrine\Common\Collections\ArrayCollection $situacoes
+     *
+     * @ORM\OneToMany(targetEntity="\BFOS\PagseguroBundle\Entity\TransacaoSituacao", mappedBy="transacao")
+     */
+    private $situacoes;
+
+    /**
+     * @var \DateTime $created_at
+     *
+     * @ORM\Column(name="created_at", type="datetime")
+     */
+    private $created_at;
+
+    /**
+     * @var \DateTime $updated_at
+     *
+     * @ORM\Column(name="updated_at", type="datetime")
+     */
+    private $updated_at;
+
+    function __construct()
+    {
+        $this->created_at = new \DateTime('now');
+        $this->created_at->setTimezone(new \DateTimeZone('UTC'));
+        $this->updated_at = new \DateTime('now');
+        $this->updated_at->setTimezone(new \DateTimeZone('UTC'));
+    }
+
+    /**
+     * @ORM\PreUpdate
+     */
+    function preUpdate(){
+        $this->updated_at = new \DateTime('now');
+        $this->updated_at->setTimezone(new \DateTimeZone('UTC'));
+        if($this->data_transacao){
+            $this->data_transacao->setTimezone(new \DateTimeZone('UTC'));
+        }
+    }
+
+    /**
+     * @ORM\PostLoad
+     */
+    function postLoad(){
+        if($this->updated_at){
+            $this->updated_at = new \DateTime($this->updated_at->format('Y-m-d H:i:s'), new \DateTimeZone('UTC'));
+        }
+        if($this->created_at){
+            $this->created_at = new \DateTime($this->created_at->format('Y-m-d H:i:s'), new \DateTimeZone('UTC'));
+        }
+        if($this->data_transacao){
+            $this->data_transacao = new \DateTime($this->data_transacao->format('Y-m-d H:i:s'), new \DateTimeZone('UTC'));
+        }
+    }
 
     /**
      * Get id
@@ -252,21 +307,31 @@ class Transacao
     /**
      * Set data_transacao
      *
-     * @param datetime $dataTransacao
+     * @param \DateTime $dataTransacao
      */
     public function setDataTransacao($dataTransacao)
     {
+        $dataTransacao->setTimezone(new \DateTimeZone('UTC'));
         $this->data_transacao = $dataTransacao;
     }
 
     /**
      * Get data_transacao
      *
-     * @return datetime 
+     * @return \DateTime
      */
-    public function getDataTransacao()
+    public function getDataTransacao($time_zone = null)
     {
-        return $this->data_transacao;
+        if($this->data_transacao){
+            $dateTime = clone $this->data_transacao;
+            if(is_null($time_zone)){
+                $time_zone = date_default_timezone_get();
+            }
+            $dateTime->setTimezone(new \DateTimeZone($time_zone));
+        } else {
+            $dateTime = $this->data_transacao;
+        }
+        return $dateTime;
     }
 
     /**
@@ -330,6 +395,26 @@ class Transacao
     }
 
     /**
+     * Get type label
+     *
+     * @return string
+     */
+    public function getTypeLabel()
+    {
+        return \BFOS\PagseguroBundle\Utils\Pagseguro::$transaction_type[$this->type];
+    }
+
+    /**
+     * Get type description
+     *
+     * @return string
+     */
+    public function getTypeDescription()
+    {
+        return \BFOS\PagseguroBundle\Utils\Pagseguro::$transaction_type_description[$this->type];
+    }
+
+    /**
      * Set status
      *
      * @param smallint $status
@@ -370,6 +455,16 @@ class Transacao
     }
 
     /**
+     * Get payment_method_type label
+     *
+     * @return string
+     */
+    public function getPaymentMethodTypeLabel()
+    {
+        return \BFOS\PagseguroBundle\Utils\Pagseguro::$payment_method_type[$this->payment_method_type];
+    }
+
+    /**
      * Set payment_method_code
      *
      * @param smallint $paymentMethodCode
@@ -387,6 +482,16 @@ class Transacao
     public function getPaymentMethodCode()
     {
         return $this->payment_method_code;
+    }
+
+    /**
+     * Get payment_method_code label
+     *
+     * @return string
+     */
+    public function getPaymentMethodCodeLabel()
+    {
+        return \BFOS\PagseguroBundle\Utils\Pagseguro::$payment_method_code[$this->payment_method_code];
     }
 
     /**
@@ -860,5 +965,58 @@ class Transacao
     public function getShippingType()
     {
         return $this->shipping_type;
+    }
+
+    /**
+     * @param \DateTime $created_at
+     */
+    public function setCreatedAt($created_at)
+    {
+        $this->created_at = $created_at;
+    }
+
+    /**
+     * @return \DateTime
+     */
+    public function getCreatedAt()
+    {
+        return $this->created_at;
+    }
+
+    public function addSituacao(TransacaoSituacao $situacao){
+        $situacao->setTransacao($this);
+        $this->situacoes[] = $situacao;
+    }
+
+    /**
+     * @param \Doctrine\Common\Collections\ArrayCollection $situacoes
+     */
+    public function setSituacoes($situacoes)
+    {
+        $this->situacoes = $situacoes;
+    }
+
+    /**
+     * @return \Doctrine\Common\Collections\ArrayCollection
+     */
+    public function getSituacoes()
+    {
+        return $this->situacoes;
+    }
+
+    /**
+     * @param \DateTime $updated_at
+     */
+    public function setUpdatedAt($updated_at)
+    {
+        $this->updated_at = $updated_at;
+    }
+
+    /**
+     * @return \DateTime
+     */
+    public function getUpdatedAt()
+    {
+        return $this->updated_at;
     }
 }

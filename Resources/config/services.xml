@@ -6,11 +6,18 @@
 
     <parameters>
         <parameter key="bfos_pagseguro.pagamento_manager.class">BFOS\PagseguroBundle\Pagseguro\PagamentoManager</parameter>
+        <parameter key="bfos_pagseguro.twig_extension.class">BFOS\PagseguroBundle\Twig\TwigExtension</parameter>
     </parameters>
     <services>
         <service id="bfos_pagseguro.pagamento_manager" class="%bfos_pagseguro.pagamento_manager.class%">
             <argument type="service" id="service_container" />
         </service>
+
+        <service id="bfos_pagseguro.twig_extension" class="%bfos_pagseguro.twig_extension.class%">
+            <tag name="twig.extension"/>
+            <argument type="service" id="service_container" />
+        </service>
+
     </services>
 
 </container>

@@ -6,12 +6,15 @@ use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use BFOS\PagseguroBundle\Entity\PagamentoItem;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\ExecutionContext;
 
 /**
  * BFOS\PagseguroBundle\Entity\Pagamento
  *
  * @ORM\Table(name="bfos_pagseguro_pagamento")
  * @ORM\Entity(repositoryClass="BFOS\PagseguroBundle\Entity\PagamentoRepository")
+ *
+ * @Assert\Callback(methods={"checaSeItensSaoValidos"})
  */
 class Pagamento
 {
@@ -84,10 +87,9 @@ class Pagamento
      *
      * @var string $token
      *
-     * @ORM\Column(name="token", type="string", length=32)
-     *
      * @Assert\MaxLength(32)
      * @Assert\MinLength(limit=32)
+     * @Assert\NotBlank()
      */
     private $token;
 
@@ -434,9 +436,104 @@ class Pagamento
      */
     private $itens;
 
+    /**
+     * @var string transaction_id
+     *
+     * @ORM\Column(name="transaction_id", type="string", length=50, nullable=true)
+     */
+    private $transaction_id;
+
+
+    /**
+     * @var \DateTime $created_at
+     *
+     * @ORM\Column(name="created_at", type="datetime")
+     */
+    private $created_at;
+
+    /**
+     * @var \DateTime $updated_at
+     *
+     * @ORM\Column(name="updated_at", type="datetime")
+     */
+    private $updated_at;
+
     function __construct()
     {
+        $this->created_at = new \DateTime('now');
+        $this->created_at->setTimezone(new \DateTimeZone('UTC'));
+        $this->updated_at = new \DateTime('now');
+        $this->updated_at->setTimezone(new \DateTimeZone('UTC'));
+
         $this->itens = new ArrayCollection();
+        $this->currency = 'BRL';
+    }
+
+    /**
+     * @ORM\PreUpdate
+     */
+    function preUpdate(){
+        $this->updated_at = new \DateTime('now');
+        $this->updated_at->setTimezone(new \DateTimeZone('UTC'));
+    }
+
+    /**
+     * @ORM\PostLoad
+     */
+    function postLoad(){
+        if($this->updated_at){
+            $this->updated_at = new \DateTime($this->updated_at->format('Y-m-d H:i:s'), new \DateTimeZone('UTC'));
+        }
+        if($this->created_at){
+            $this->created_at = new \DateTime($this->created_at->format('Y-m-d H:i:s'), new \DateTimeZone('UTC'));
+        }
+    }
+
+
+    /**
+     * @param \DateTime $created_at
+     */
+    public function setCreatedAt($created_at)
+    {
+        $created_at->setTimezone(new \DateTimeZone('UTC'));
+        $this->created_at = $created_at;
+    }
+
+    /**
+     * @return \DateTime
+     */
+    public function getCreatedAt($time_zone = null)
+    {
+        $dateTime = clone $this->created_at;
+        if(is_null($time_zone)){
+            $time_zone = date_default_timezone_get();
+        }
+        $dateTime->setTimezone(new \DateTimeZone($time_zone));
+        return $dateTime;
+    }
+
+    /**
+     * @param \DateTime $updated_at
+     */
+    public function setUpdatedAt($updated_at)
+    {
+        $updated_at->setTimezone(new \DateTimeZone('UTC'));
+        $this->updated_at = $updated_at;
+    }
+
+    /**
+     * @param string $time_zone
+     *
+     * @return \DateTime
+     */
+    public function getUpdatedAt($time_zone = null)
+    {
+        $dateTime = clone $this->updated_at;
+        if(is_null($time_zone)){
+            $time_zone = date_default_timezone_get();
+        }
+        $dateTime->setTimezone(new \DateTimeZone($time_zone));
+        return $dateTime;
     }
 
     /**
@@ -1005,13 +1102,24 @@ class Pagamento
 
         $tag = 'reference';
         $value = $this->getReference();
-        if($this->getReference())
+        if($this->getReference()){
             $xml .= sprintf('<%s>%s</%s>',$tag,$value,$tag);
+        }
+
+        $tag = 'redirectURL';
+        $value = $this->getRedirectURL();
+        if($this->getRedirectURL()){
+            $xml .= sprintf('<%s>%s</%s>',$tag,$value,$tag);
+        }
 
         $tag = 'sender';
         $value = '';
-        if($this->getSenderName()) $value .= sprintf('<%s>%s</%s>','name',$this->getSenderName(),'name');
-        if($this->getSenderEmail()) $value .= sprintf('<%s>%s</%s>','email',$this->getSenderEmail(),'email');
+        if($this->getSenderName()) {
+            $value .= sprintf('<%s>%s</%s>','name',$this->getSenderName(),'name');
+        }
+        if($this->getSenderEmail()) {
+            $value .= sprintf('<%s>%s</%s>','email',$this->getSenderEmail(),'email');
+        }
 
         $value2 = '';
         $j = 0;
@@ -1058,5 +1166,27 @@ class Pagamento
     }
 
 
+    public function checaSeItensSaoValidos(ExecutionContext $context){
+        if(count($this->getItens())==0){
+            $propertyPath = $context->getPropertyPath() . '.itens';
+            $context->setPropertyPath($propertyPath);
+            $context->addViolation('É preciso pelo menos um item no Pagamento.', array(), null);
+        }
+    }
 
+    /**
+     * @param string $transaction_id
+     */
+    public function setTransactionId($transaction_id)
+    {
+        $this->transaction_id = $transaction_id;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTransactionId()
+    {
+        return $this->transaction_id;
+    }
 }

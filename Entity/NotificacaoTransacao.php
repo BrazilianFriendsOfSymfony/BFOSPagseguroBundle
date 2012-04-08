@@ -5,13 +5,13 @@ namespace BFOS\PagseguroBundle\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * BFOS\PagseguroBundle\Entity\SituacaoTransacao
+ * BFOS\PagseguroBundle\Entity\NotificacaoTransacao
  *
- * @ORM\Table(name="bfos_pagseguro_situacao_transacao")
- * @ORM\Entity(repositoryClass="BFOS\PagseguroBundle\Entity\SituacaoTransacaoRepository")
+ * @ORM\Table(name="bfos_pagseguro_notificacao_transacao")
+ * @ORM\Entity(repositoryClass="BFOS\PagseguroBundle\Entity\NotificacaoTransacaoRepository")
  * @ORM\HasLifecycleCallbacks
  */
-class SituacaoTransacao
+class NotificacaoTransacao
 {
     /**
      * @var integer $id
@@ -101,15 +101,15 @@ class SituacaoTransacao
 
     function __construct()
     {
-        $this->created_at = new \DateTime();
-        $this->updated_at = new \DateTime();
+        $this->created_at = new \DateTime('now', new \DateTimeZone('UTC'));
+        $this->updated_at = new \DateTime('now', new \DateTimeZone('UTC'));
     }
 
     /**
      * @ORM\PreUpdate
      */
     function preUpdate(){
-        $this->updated_at = new \DateTime();
+        $this->updated_at = new \DateTime('now', new \DateTimeZone('UTC'));
     }
 
 
@@ -369,8 +369,12 @@ class SituacaoTransacao
     /**
      * @return \DateTime
      */
-    public function getUpdatedAt()
+    public function getUpdatedAt($time_zone = null)
     {
-        return $this->updated_at;
+        $dateTime = clone $this->updated_at;
+        if(!is_null($time_zone)){
+            $dateTime->setTimezone($time_zone);
+        }
+        return $dateTime;
     }
 }

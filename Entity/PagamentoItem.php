@@ -113,6 +113,12 @@ class PagamentoItem
      */
     private $weight;
 
+    function __construct()
+    {
+        $this->quantity = 1;
+    }
+
+
     /**
      * Get id
      *
@@ -248,7 +254,6 @@ class PagamentoItem
         $arr = array();
         $arr['id'] = $this->getId();
         $arr['amount'] = $this->getAmount();
-        $arr['codigo'] = $this->getCodigo();
         $arr['descriptiob'] = $this->getDescription();
         $arr['quantity'] = $this->getQuantity();
         $arr['shippingCost'] = $this->getShippingCost();
@@ -262,9 +267,13 @@ class PagamentoItem
         $xml = '';
         $xml .= sprintf('<%s>%s</%s>', 'id', $this->getId(), 'id');
         $xml .= sprintf('<%s>%s</%s>', 'description', $this->getDescription(), 'description');
-        if($this->getAmount()) $xml .= sprintf('<%s>%s</%s>', 'amount', $this->getAmount(), 'amount');
+        if($this->getAmount()) {
+            $xml .= sprintf('<%s>%s</%s>', 'amount', $this->getAmount(), 'amount');
+        }
         $xml .= sprintf('<%s>%s</%s>', 'quantity', $this->getQuantity(), 'quantity');
-        if($this->getWeight()) $xml .= sprintf('<%s>%s</%s>', 'weight', $this->getWeight(), 'weight');
+        if($this->getWeight()) {
+            $xml .= sprintf('<%s>%s</%s>', 'weight', $this->getWeight(), 'weight');
+        }
 
         return $xml;
 

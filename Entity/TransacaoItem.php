@@ -53,7 +53,7 @@ class TransacaoItem
     /**
      * @var decimal $amount
      *
-     * @ORM\Column(name="amount", type="decimal")
+     * @ORM\Column(name="amount", type="decimal", scale=2)
      */
     private $amount;
 

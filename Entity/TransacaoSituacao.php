@@ -5,12 +5,13 @@ namespace BFOS\PagseguroBundle\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * BFOS\PagseguroBundle\Entity\TransacaoItem
+ * BFOS\PagseguroBundle\Entity\TransacaoSituacao
  *
- * @ORM\Table(name="bfos_pagseguro_transacao_item")
+ * @ORM\Table(name="bfos_pagseguro_transacao_situacao")
  * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
  */
-class TransacaoItem
+class TransacaoSituacao
 {
     /**
      * @var integer $id
@@ -30,33 +31,100 @@ class TransacaoItem
     private $transacao;
 
     /**
-     * @var integer $identifier
+     * @var integer $situacao
      *
-     * @ORM\Column(name="identifier", type="integer")
+     * @ORM\Column(name="situacao", type="string", length=50)
      */
-    private $identifier;
+    private $situacao;
 
     /**
-     * @var string $description
+     * @var \DateTime $created_at
      *
-     * @ORM\Column(name="description", type="string", length=255)
+     * @ORM\Column(name="created_at", type="datetime")
      */
-    private $description;
+    private $created_at;
 
     /**
-     * @var integer $quantity
+     * @var \DateTime $updated_at
      *
-     * @ORM\Column(name="quantity", type="integer")
+     * @ORM\Column(name="updated_at", type="datetime")
      */
-    private $quantity;
+    private $updated_at;
+
+    function __construct()
+    {
+        $this->created_at = new \DateTime('now');
+        $this->created_at->setTimezone(new \DateTimeZone('UTC'));
+        $this->updated_at = new \DateTime('now');
+        $this->updated_at->setTimezone(new \DateTimeZone('UTC'));
+    }
 
     /**
-     * @var decimal $amount
-     *
-     * @ORM\Column(name="amount", type="decimal", scale=2)
+     * @ORM\PreUpdate
      */
-    private $amount;
+    function preUpdate(){
+        $this->updated_at = new \DateTime('now');
+        $this->updated_at->setTimezone(new \DateTimeZone('UTC'));
+    }
 
+    /**
+     * @ORM\PostLoad
+     */
+    function postLoad(){
+        if($this->updated_at){
+            $this->updated_at = new \DateTime($this->updated_at->format('Y-m-d H:i:s'), new \DateTimeZone('UTC'));
+        }
+        if($this->created_at){
+            $this->created_at = new \DateTime($this->created_at->format('Y-m-d H:i:s'), new \DateTimeZone('UTC'));
+        }
+    }
+
+
+    /**
+     * @param \DateTime $created_at
+     */
+    public function setCreatedAt($created_at)
+    {
+        $created_at->setTimezone(new \DateTimeZone('UTC'));
+        $this->created_at = $created_at;
+    }
+
+    /**
+     * @return \DateTime
+     */
+    public function getCreatedAt($time_zone = null)
+    {
+        $dateTime = clone $this->created_at;
+        if(is_null($time_zone)){
+            $time_zone = date_default_timezone_get();
+        }
+        $dateTime->setTimezone(new \DateTimeZone($time_zone));
+        return $dateTime;
+    }
+
+    /**
+     * @param \DateTime $updated_at
+     */
+    public function setUpdatedAt($updated_at)
+    {
+        $updated_at->setTimezone(new \DateTimeZone('UTC'));
+        $this->updated_at = $updated_at;
+    }
+
+    /**
+     * @param string $time_zone
+     *
+     * @return \DateTime
+     */
+    public function getUpdatedAt($time_zone = null)
+    {
+        $dateTime = clone $this->updated_at;
+        if(is_null($time_zone)){
+            $time_zone = date_default_timezone_get();
+        }
+        $dateTime->setTimezone(new \DateTimeZone($time_zone));
+        return $dateTime;
+    }
 
     /**
      * Get id
@@ -66,86 +134,6 @@ class TransacaoItem
     public function getId()
     {
         return $this->id;
-    }
-
-    /**
-     * Set identifier
-     *
-     * @param integer $identifier
-     */
-    public function setIdentifier($identifier)
-    {
-        $this->identifier = $identifier;
-    }
-
-    /**
-     * Get identifier
-     *
-     * @return integer 
-     */
-    public function getIdentifier()
-    {
-        return $this->identifier;
-    }
-
-    /**
-     * Set description
-     *
-     * @param string $description
-     */
-    public function setDescription($description)
-    {
-        $this->description = $description;
-    }
-
-    /**
-     * Get description
-     *
-     * @return string 
-     */
-    public function getDescription()
-    {
-        return $this->description;
-    }
-
-    /**
-     * Set quantity
-     *
-     * @param integer $quantity
-     */
-    public function setQuantity($quantity)
-    {
-        $this->quantity = $quantity;
-    }
-
-    /**
-     * Get quantity
-     *
-     * @return integer 
-     */
-    public function getQuantity()
-    {
-        return $this->quantity;
-    }
-
-    /**
-     * Set amount
-     *
-     * @param decimal $amount
-     */
-    public function setAmount($amount)
-    {
-        $this->amount = $amount;
-    }
-
-    /**
-     * Get amount
-     *
-     * @return decimal 
-     */
-    public function getAmount()
-    {
-        return $this->amount;
     }
 
     /**
@@ -163,4 +151,22 @@ class TransacaoItem
     {
         return $this->transacao;
     }
+
+
+    /**
+     * @param int $situacao
+     */
+    public function setSituacao($situacao)
+    {
+        $this->situacao = $situacao;
+    }
+
+    /**
+     * @return int
+     */
+    public function getSituacao()
+    {
+        return $this->situacao;
+    }
+
 }
