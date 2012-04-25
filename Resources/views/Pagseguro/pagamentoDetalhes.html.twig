@@ -4,15 +4,15 @@
         <tbody>
         <tr>
             <th>Vendedor e-mail</th>
-            <td>{{ pagamento.email }}</td>
+            <td>{{ pagamento.email|default('') }}</td>
         </tr>
         <tr>
             <th>Cliente nome</th>
-            <td>{{ pagamento.senderName }}</td>
+            <td>{{ pagamento.senderName|default('') }}</td>
         </tr>
         <tr>
             <th>Cliente e-mail</th>
-            <td>{{ pagamento.senderEmail }}</td>
+            <td>{{ pagamento.senderEmail|default('') }}</td>
         </tr>
 
         </tbody>
