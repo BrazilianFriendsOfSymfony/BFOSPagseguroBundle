@@ -2,7 +2,7 @@
     "name": "brazilianfriendsofsymfony/pagseguro-bundle",
     "type": "symfony-bundle",
     "description": "Symfony BFOSPagseguroBundle",
-    "keywords": ["Deployment management"],
+    "keywords": ["Integração gateway de pagamento Pagseguro"],
     "homepage": "http://www.duocriativa.com.br/bfos",
     "license": "MIT",
     "authors": [
