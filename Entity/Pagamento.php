@@ -168,7 +168,7 @@ class Pagamento
      * @ORM\Column(name="senderName", type="string", length=50, nullable=true)
      *
      * @Assert\MaxLength(50)
-     * @Assert\Regex(pattern="/^\w+([ ])\w+/", message="O nome tem que conter um espaço, caracterizando o nome completo..")
+     * @Assert\Regex(pattern="/^.*(?=.*\s)(?=.*[a-zA-Z]).*$/", message="O nome tem que conter um espaço, caracterizando o nome completo..")
      */
     private $senderName;
 
