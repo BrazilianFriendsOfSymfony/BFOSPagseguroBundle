@@ -109,10 +109,6 @@
                 <td>{{ notificacao.lastEventDate|date('d-m-Y H:i:s') }}</td>
                 <td><a href="#">detalhes</a></td>
             </tr>
-            {#<tr id="row_detalhes_situacao_{{notificacao.id}}" style="width: 100%;">#}
-                {#<td colspan="5">#}
-
-                    {#<table style="width: 100%;">#}
             <tr>
             <th>Referência</th>
             <td colspan="4">{{notificacao.reference}}</td>
@@ -126,11 +122,6 @@
                 <td>{{notificacao.paymentMethodTypeLabel}}</td>
                 <td colspan="3">{{notificacao.paymentMethodCodeLabel}}</td>
             </tr>
-
-            {#</table>#}
-
-                        {#</td>#}
-                    {#</tr>#}
             {% endfor %}
         </table>
     </div>
