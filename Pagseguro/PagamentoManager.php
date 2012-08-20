@@ -47,12 +47,13 @@ class PagamentoManager
      *
      * @param \BFOS\PagseguroBundle\Entity\Pagamento $pagamento
      *
-     * @return boolean False se o pagamento nao eh valido para ser submetido ao Pagseguro.
+     * @return boolean|\Symfony\Component\Validator\ConstraintViolationList True se o pagamento eh valido para ser
+     *         submetido ao Pagseguro e ConstraintViolationList cajo constrário.
      */
     public function registrarPagamento(Pagamento $pagamento){
 
-        if($this->ehValido($pagamento)!==true){
-            return false;
+        if(($erros = $this->ehValido($pagamento))!==true){
+            return $erros;
         }
 
         $this->rpagamento->persist($pagamento);

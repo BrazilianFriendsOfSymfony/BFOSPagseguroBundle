@@ -268,7 +268,7 @@ class PagamentoItem
         $xml .= sprintf('<%s>%s</%s>', 'id', $this->getId(), 'id');
         $xml .= sprintf('<%s>%s</%s>', 'description', $this->getDescription(), 'description');
         if($this->getAmount()) {
-            $xml .= sprintf('<%s>%s</%s>', 'amount', $this->getAmount(), 'amount');
+            $xml .= sprintf('<%s>%s</%s>', 'amount', number_format($this->getAmount(),2), 'amount');
         }
         $xml .= sprintf('<%s>%s</%s>', 'quantity', $this->getQuantity(), 'quantity');
         if($this->getWeight()) {
