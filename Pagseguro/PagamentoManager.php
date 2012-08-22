@@ -64,6 +64,7 @@ class PagamentoManager
 
         $url = 'https://ws.pagseguro.uol.com.br/v2/checkout?' . sprintf('email=%s&token=%s', $pagamento->getEmail(), $pagamento->getToken());
 
+        $this->logger->debug('url do Pagseguro = ' . $url);
         $this->logger->debug('xml enviado ao Pagseguro = ' . $xml);
 
         $retorno = Browser::postXml($url, $xml);
@@ -71,6 +72,7 @@ class PagamentoManager
         if($retorno['info']['http_code']!=200){
             $erro_msg = 'O Pagseguro nao autorizou o registro da transacao do pagamento com referencia '.$pagamento->getReference().' : ' . $retorno['info']['http_code'] . " | " . $retorno['corpo'];
             $this->logger->err($erro_msg);
+            $this->logger->err(print_r($retorno,true));
             $pagamento->setRegistroErrors($erro_msg);
             $this->rpagamento->persist($pagamento);
             $this->rpagamento->flush();

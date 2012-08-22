@@ -1109,7 +1109,7 @@ class Pagamento
         $tag = 'redirectURL';
         $value = $this->getRedirectURL();
         if($this->getRedirectURL()){
-            $xml .= sprintf('<%s>%s</%s>',$tag,$value,$tag);
+            $xml .= sprintf('<%s><![CDATA[%s]]></%s>',$tag,$value,$tag);
         }
 
         $tag = 'sender';
@@ -1168,9 +1168,7 @@ class Pagamento
 
     public function checaSeItensSaoValidos(ExecutionContext $context){
         if(count($this->getItens())==0){
-            $propertyPath = $context->getPropertyPath() . '.itens';
-            $context->setPropertyPath($propertyPath);
-            $context->addViolation('É preciso pelo menos um item no Pagamento.', array(), null);
+            $context->addViolationAtSubPath('itens', 'É preciso pelo menos um item no Pagamento.');
         }
     }
 
