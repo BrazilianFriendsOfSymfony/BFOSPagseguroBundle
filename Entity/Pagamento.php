@@ -57,6 +57,7 @@ class Pagamento
      * @ORM\Column(name="reference", type="string", length=200, nullable=true)
      *
      * @Assert\MaxLength(200)
+     * @Assert\NotBlank()
      */
     private $reference;
 
