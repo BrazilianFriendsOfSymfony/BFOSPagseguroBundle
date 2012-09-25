@@ -206,6 +206,21 @@ class Pagamento
     private $senderPhone;
 
     /**
+     * Valor total do frete.
+
+    Informa o valor total de frete do pedido. Caso este valor seja especificado, o PagSeguro irá assumi-lo como valor do frete e não fará nenhum cálculo referente aos pesos e valores de entrega dos itens.
+
+    Presença: Opcional.
+    Tipo: Número.
+    Formato: Decimal, com duas casas decimais separadas por ponto (p.e, 1234.56), maior que 0.00 e menor ou igual a 9999999.00.
+     *
+     * @var decimal $shippingCost
+     *
+     * @ORM\Column(name="shippingCost", type="decimal", scale=2, nullable=true)
+     */
+    private $shippingCost;
+
+    /**
      * Informa o tipo de frete a ser usado para o envio do produto. Esta informação é usada pelo PagSeguro para calcular, junto aos Correios,
      * o valor do frete a partir do peso dos itens. A tabela abaixo descreve os valores aceitos e seus significados:
      *
@@ -1079,6 +1094,7 @@ class Pagamento
         $arr['shippingAddressState'] = $this->getShippingAddressState();
         $arr['shippingAddressCountry'] = $this->getShippingAddressCountry();
         $arr['shippingType'] = $this->getShippingType();
+        $arr['shippingCost'] = $this->getShippingCost();
         $arr['token'] = $this->getToken();
 
         $arr_itens = array();
@@ -1140,6 +1156,7 @@ class Pagamento
         $value = '';
         $i = 0;
         if($this->getShippingType()) { $value .= sprintf('<%s>%s</%s>','type', $this->getShippingType(),'type'); $i++;}
+        if($this->getShippingCost()) { $value .= sprintf('<%s>%s</%s>','cost', number_format($this->getShippingCost(),2),'cost'); $i++;}
         if($this->getShippingAddressStreet()) { $value2 = sprintf('<%s>%s</%s>','street', $this->getShippingAddressStreet(),'street');$i++;}
         if($this->getShippingAddressNumber()) { $value2 .= sprintf('<%s>%s</%s>','number', $this->getShippingAddressNumber(),'number');$i++;}
         if($this->getShippingAddressComplement()) { $value2 .= sprintf('<%s>%s</%s>','complement', $this->getShippingAddressComplement(),'complement');$i++;}
@@ -1186,5 +1203,51 @@ class Pagamento
     public function getTransactionId()
     {
         return $this->transaction_id;
+    }
+
+    /**
+     * Set shippingCost
+     *
+     * @param float $shippingCost
+     * @return Pagamento
+     */
+    public function setShippingCost($shippingCost)
+    {
+        $this->shippingCost = $shippingCost;
+    
+        return $this;
+    }
+
+    /**
+     * Get shippingCost
+     *
+     * @return float 
+     */
+    public function getShippingCost()
+    {
+        return $this->shippingCost;
+    }
+
+    /**
+     * Add itens
+     *
+     * @param BFOS\PagseguroBundle\Entity\PagamentoItem $itens
+     * @return Pagamento
+     */
+    public function addIten(\BFOS\PagseguroBundle\Entity\PagamentoItem $itens)
+    {
+        $this->itens[] = $itens;
+    
+        return $this;
+    }
+
+    /**
+     * Remove itens
+     *
+     * @param BFOS\PagseguroBundle\Entity\PagamentoItem $itens
+     */
+    public function removeIten(\BFOS\PagseguroBundle\Entity\PagamentoItem $itens)
+    {
+        $this->itens->removeElement($itens);
     }
 }
