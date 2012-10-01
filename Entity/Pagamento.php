@@ -1123,6 +1123,12 @@ class Pagamento
             $xml .= sprintf('<%s>%s</%s>',$tag,$value,$tag);
         }
 
+        if($this->getExtraAmount()){
+            $tag = 'extraAmount';
+            $value = number_format($this->getExtraAmount(), 2);
+            $xml .= sprintf('<%s>%s</%s>',$tag,$value,$tag);
+        }
+
         $tag = 'redirectURL';
         $value = $this->getRedirectURL();
         if($this->getRedirectURL()){
