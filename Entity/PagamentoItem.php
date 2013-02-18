@@ -58,7 +58,7 @@ class PagamentoItem
      * Tipo: Número.
      * Formato: Decimal, com duas casas decimais separadas por ponto (p.e., 1234.56).
      *
-     * @var decimal $amount
+     * @var float $amount
      *
      * @ORM\Column(name="amount", type="decimal", scale=2)
      *
@@ -93,7 +93,7 @@ class PagamentoItem
      * Tipo: Número.
      * Formato: Decimal, com duas casas decimais.
      *
-     * @var decimal $shippingCost
+     * @var float $shippingCost
      *
      * @ORM\Column(name="shippingCost", type="decimal", nullable=true, scale=2)
      */
@@ -172,7 +172,7 @@ class PagamentoItem
     /**
      * Set amount
      *
-     * @param decimal $amount
+     * @param float $amount
      */
     public function setAmount($amount)
     {
@@ -182,7 +182,7 @@ class PagamentoItem
     /**
      * Get amount
      *
-     * @return decimal 
+     * @return float
      */
     public function getAmount()
     {
@@ -202,7 +202,7 @@ class PagamentoItem
     /**
      * Get quantity
      *
-     * @return decimal 
+     * @return float
      */
     public function getQuantity()
     {
@@ -212,7 +212,7 @@ class PagamentoItem
     /**
      * Set shippingCost
      *
-     * @param decimal $shippingCost
+     * @param float $shippingCost
      */
     public function setShippingCost($shippingCost)
     {
@@ -222,7 +222,7 @@ class PagamentoItem
     /**
      * Get shippingCost
      *
-     * @return decimal 
+     * @return float
      */
     public function getShippingCost()
     {
@@ -268,7 +268,7 @@ class PagamentoItem
         $xml .= sprintf('<%s>%s</%s>', 'id', $this->getId(), 'id');
         $xml .= sprintf('<%s>%s</%s>', 'description', $this->getDescription(), 'description');
         if($this->getAmount()) {
-            $xml .= sprintf('<%s>%s</%s>', 'amount', number_format($this->getAmount(),2), 'amount');
+            $xml .= sprintf('<%s>%s</%s>', 'amount', number_format($this->getAmount(),2, '.', ''), 'amount');
         }
         $xml .= sprintf('<%s>%s</%s>', 'quantity', $this->getQuantity(), 'quantity');
         if($this->getWeight()) {
