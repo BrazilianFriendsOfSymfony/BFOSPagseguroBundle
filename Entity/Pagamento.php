@@ -57,6 +57,7 @@ class Pagamento
      * @ORM\Column(name="reference", type="string", length=200, nullable=true)
      *
      * @Assert\MaxLength(200)
+     * @Assert\NotBlank()
      */
     private $reference;
 
@@ -114,7 +115,7 @@ class Pagamento
      * Tipo:Data/hora.
      * Formato: YYYY-MM-DDThh:mm:ss.sTZD, o formato oficial do W3C para datas..
      *
-     * @var datetime $retornoEm
+     * @var \DateTime $retornoEm
      *
      * @ORM\Column(name="retorno_em", type="datetime", nullable=true)
      *
@@ -204,6 +205,21 @@ class Pagamento
      * @Assert\Max(limit=99999999)
      */
     private $senderPhone;
+
+    /**
+     * Valor total do frete.
+
+    Informa o valor total de frete do pedido. Caso este valor seja especificado, o PagSeguro irá assumi-lo como valor do frete e não fará nenhum cálculo referente aos pesos e valores de entrega dos itens.
+
+    Presença: Opcional.
+    Tipo: Número.
+    Formato: Decimal, com duas casas decimais separadas por ponto (p.e, 1234.56), maior que 0.00 e menor ou igual a 9999999.00.
+     *
+     * @var float $shippingCost
+     *
+     * @ORM\Column(name="shippingCost", type="decimal", scale=2, nullable=true)
+     */
+    private $shippingCost;
 
     /**
      * Informa o tipo de frete a ser usado para o envio do produto. Esta informação é usada pelo PagSeguro para calcular, junto aos Correios,
@@ -363,7 +379,7 @@ class Pagamento
      * Tipo: Número.
      * Formato: Decimal (positivo ou negativo), com duas casas decimais separadas por ponto (p.e., 1234.56 ou -1234.56).
      *
-     * @var decimal $extraAmount
+     * @var float $extraAmount
      *
      * @ORM\Column(name="extraAmount", type="decimal", scale=2, nullable=true)
      */
@@ -500,6 +516,7 @@ class Pagamento
     }
 
     /**
+     * @param null $time_zone
      * @return \DateTime
      */
     public function getCreatedAt($time_zone = null)
@@ -639,7 +656,7 @@ class Pagamento
     }
 
     /**
-     * @param \BFOS\PagseguroBundle\Entity\datetime $retornoData
+     * @param \DateTime $retornoData
      */
     public function setRetornoEm($retornoData)
     {
@@ -647,7 +664,7 @@ class Pagamento
     }
 
     /**
-     * @return \BFOS\PagseguroBundle\Entity\datetime
+     * @return \DateTime
      */
     public function getRetornoEm()
     {
@@ -937,7 +954,7 @@ class Pagamento
     /**
      * Set extraAmount
      *
-     * @param decimal $extraAmount
+     * @param float $extraAmount
      */
     public function setExtraAmount($extraAmount)
     {
@@ -947,7 +964,7 @@ class Pagamento
     /**
      * Get extraAmount
      *
-     * @return decimal 
+     * @return float
      */
     public function getExtraAmount()
     {
@@ -1031,7 +1048,7 @@ class Pagamento
     }
 
     /**
-     * @param \BFOS\PagseguroBundle\Entity\ArrayCollection $itens
+     * @param ArrayCollection $itens
      */
     public function setItens($itens)
     {
@@ -1047,7 +1064,7 @@ class Pagamento
     }
 
     /**
-     * @return \BFOS\PagseguroBundle\Entity\ArrayCollection
+     * @return ArrayCollection
      */
     public function getItens()
     {
@@ -1079,9 +1096,13 @@ class Pagamento
         $arr['shippingAddressState'] = $this->getShippingAddressState();
         $arr['shippingAddressCountry'] = $this->getShippingAddressCountry();
         $arr['shippingType'] = $this->getShippingType();
+        $arr['shippingCost'] = $this->getShippingCost();
         $arr['token'] = $this->getToken();
 
         $arr_itens = array();
+        /**
+         * @var PagamentoItem $item
+         */
         foreach($this->getItens() as $item){
             $arr_itens[] = $item->toArray();
         }
@@ -1106,10 +1127,16 @@ class Pagamento
             $xml .= sprintf('<%s>%s</%s>',$tag,$value,$tag);
         }
 
+        if($this->getExtraAmount()){
+            $tag = 'extraAmount';
+            $value = number_format($this->getExtraAmount(), 2, '.', '');
+            $xml .= sprintf('<%s>%s</%s>',$tag,$value,$tag);
+        }
+
         $tag = 'redirectURL';
         $value = $this->getRedirectURL();
         if($this->getRedirectURL()){
-            $xml .= sprintf('<%s>%s</%s>',$tag,$value,$tag);
+            $xml .= sprintf('<%s><![CDATA[%s]]></%s>',$tag,$value,$tag);
         }
 
         $tag = 'sender';
@@ -1131,6 +1158,9 @@ class Pagamento
         }
 
         $xml_itens = '';
+        /**
+         * @var PagamentoItem $item
+         */
         foreach($this->getItens() as $item){
             $xml_itens .= sprintf('<%s>%s</%s>','item',$item->toXML(),'item');
         }
@@ -1140,6 +1170,7 @@ class Pagamento
         $value = '';
         $i = 0;
         if($this->getShippingType()) { $value .= sprintf('<%s>%s</%s>','type', $this->getShippingType(),'type'); $i++;}
+        if($this->getShippingCost()) { $value .= sprintf('<%s>%s</%s>','cost', number_format($this->getShippingCost(),2, '.', ''),'cost'); $i++;}
         if($this->getShippingAddressStreet()) { $value2 = sprintf('<%s>%s</%s>','street', $this->getShippingAddressStreet(),'street');$i++;}
         if($this->getShippingAddressNumber()) { $value2 .= sprintf('<%s>%s</%s>','number', $this->getShippingAddressNumber(),'number');$i++;}
         if($this->getShippingAddressComplement()) { $value2 .= sprintf('<%s>%s</%s>','complement', $this->getShippingAddressComplement(),'complement');$i++;}
@@ -1168,9 +1199,7 @@ class Pagamento
 
     public function checaSeItensSaoValidos(ExecutionContext $context){
         if(count($this->getItens())==0){
-            $propertyPath = $context->getPropertyPath() . '.itens';
-            $context->setPropertyPath($propertyPath);
-            $context->addViolation('É preciso pelo menos um item no Pagamento.', array(), null);
+            $context->addViolationAtSubPath('itens', 'É preciso pelo menos um item no Pagamento.');
         }
     }
 
@@ -1189,4 +1218,28 @@ class Pagamento
     {
         return $this->transaction_id;
     }
+
+    /**
+     * Set shippingCost
+     *
+     * @param float $shippingCost
+     * @return Pagamento
+     */
+    public function setShippingCost($shippingCost)
+    {
+        $this->shippingCost = $shippingCost;
+    
+        return $this;
+    }
+
+    /**
+     * Get shippingCost
+     *
+     * @return float 
+     */
+    public function getShippingCost()
+    {
+        return $this->shippingCost;
+    }
+
 }

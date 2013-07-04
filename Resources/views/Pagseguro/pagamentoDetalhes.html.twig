@@ -1,6 +1,6 @@
 <div class="pagseguro">
 
-    <table class="table table-condensed">
+    <table class="table table-striped">
         <tbody>
         <tr>
             <th>Vendedor e-mail</th>
@@ -19,16 +19,16 @@
     </table>
 
     {% if transacao is defined and transacao is not empty %}
-    <h3>Detalhes da transação</h3>
+    <h3 class="mb-5">Detalhes da transação</h3>
 
     <div class="transacao">
-        <table>
+        <table class="table table-striped">
             <tr>
                 <th>Data</th>
                 <td>{{transacao.dataTransacao|date('d-m-Y H:i:s')}}</td>
             </tr>
             <tr>
-                <th>Vendedor e-mail:</th>
+                <th>Vendedor e-mail</th>
                 <td>{{transacao.vendedorEmail}}</td>
             </tr>
             <tr>
@@ -45,27 +45,27 @@
             </tr>
             <tr>
                 <th>Último evento em</th>
-                <td>{{transacao.lastEventDate}}</td>
+                <td>{{transacao.lastEventDate|date('d-m-Y H:i:s')}}</td>
             </tr>
             <tr>
                 <th>Valor bruto</th>
-                <td>{{transacao.grossAmount}}</td>
+                <td>R$ {{ transacao.grossAmount|number_format(2, ',', '.') }}</td>
             </tr>
             <tr>
                 <th>Valor desconto</th>
-                <td>{{transacao.discountAmount}}</td>
+                <td>R$ {{transacao.discountAmount|number_format(2, ',', '.') }}</td>
             </tr>
             <tr>
                 <th>Extras</th>
-                <td>{{transacao.extraAmount}}</td>
+                <td>R$ {{transacao.extraAmount|number_format(2, ',', '.') }}</td>
             </tr>
             <tr>
                 <th>Valor das taxas cobradas</th>
-                <td>{{transacao.feeAmount}}</td>
+                <td>R$ {{transacao.feeAmount|number_format(2, ',', '.') }}</td>
             </tr>
             <tr>
                 <th>Valor líquido</th>
-                <td>{{transacao.netAmount}}</td>
+                <td>R$ {{transacao.netAmount|number_format(2, ',', '.') }}</td>
             </tr>
             <tr>
                 <th>Método de pagamento</th>
@@ -74,9 +74,9 @@
             <tr>
                 <th>Situação</th>
                 <td>
-                {% for situacao in transacao.situacoes %}
+                    {% for situacao in transacao.situacoes %}
                     {{situacao.updatedAt|date('d-m-Y H:i:s')}} {{ situacao.situacao }}<br/>
-                {% endfor %}
+                    {% endfor %}
                 </td>
             </tr>
             <tr>
@@ -98,40 +98,31 @@
         </table>
     </div>
     {% endif %}
-    <h3>Notificações do Pagseguro</h3>
+    <h3 class="mb-5">Notificações do Pagseguro</h3>
     <div class="notificacoes">
-        <table>
-        {% for notificacao in notificacoes %}
+        <table class="table table-striped">
+            {% for notificacao in notificacoes %}
             <tr id="situacao_{{notificacao.id}}">
                 <th>Situação</th>
                 <td>{{notificacao.statusLabel}}</td>
                 <th>Data último evento</th>
-                <td>{{notificacao.lastEventDate}}</td>
+                <td>{{ notificacao.lastEventDate|date('d-m-Y H:i:s') }}</td>
                 <td><a href="#">detalhes</a></td>
             </tr>
-            <tr id="row_detalhes_situacao_{{notificacao.id}}">
-                <td colspan="5" style="width: 100%;">
-
-                    <table style="width: 100%;">
-                        <tr>
-                            <th>Referência</th>
-                            <td colspan="2">{{notificacao.reference}}</td>
-                        </tr>
-                        <tr>
-                            <th>Situação</th>
-                            <td colspan="2">{{notificacao.statusDescription}}</td>
-                        </tr>
-                        <tr>
-                            <th>Método de pagamento</th>
-                            <td>{{notificacao.paymentMethodTypeLabel}}</td>
-                            <td>{{notificacao.paymentMethodCodeLabel}}</td>
-                        </tr>
-
-                    </table>
-
-                </td>
+            <tr>
+            <th>Referência</th>
+            <td colspan="4">{{notificacao.reference}}</td>
             </tr>
-    {% endfor %}
+            <tr>
+                <th>Situação</th>
+                <td colspan="4">{{notificacao.statusDescription}}</td>
+            </tr>
+            <tr>
+                <th>Método de pagamento</th>
+                <td>{{notificacao.paymentMethodTypeLabel}}</td>
+                <td colspan="3">{{notificacao.paymentMethodCodeLabel}}</td>
+            </tr>
+            {% endfor %}
         </table>
     </div>
 </div>
